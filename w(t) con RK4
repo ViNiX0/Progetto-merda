@@ -1,0 +1,88 @@
+import random
+import matplotlib.pyplot as plt
+import numpy as np
+import math
+#dati forniti dal problema:
+l = 2.2 #distanza radiale oltre la quale la fiamma non scioglie la cera
+k = 1 / 1350
+d = 0.29
+w_inf = 0.5
+a1 = 1.05
+b1 = 5.2*10**(-5)
+ki = 7.4*10**(-4)
+j = ja = 7.15*10**(-4)
+n = 0.723
+rho = 0.9
+rhom = 0.8159
+def R(x,l,ki,d): #questa è R(t)
+
+    return l-(l-d)*np.exp(-ki*x)
+def f(z, y, z1, a, b, c):
+    # Prima equazione del sistema
+    return z1
+
+def g(z, y, z1, a, b, c):
+    # Seconda equazione del sistema
+    return (a * b * y / z) - ((c - z) / z) * z1
+
+def runge_kutta_4th_order_2F1(a, b, c, z, step_size, max_iterations=1000):
+    y = 1.0
+    z1 = 0.0
+
+    for i in range(max_iterations):
+        k1_y = step_size * f(z, y, z1, a, b, c)
+        k1_z1 = step_size * g(z, y, z1, a, b, c)
+
+        k2_y = step_size * f(z + step_size/2, y + k1_y/2, z1 + k1_z1/2, a, b, c)
+        k2_z1 = step_size * g(z + step_size/2, y + k1_y/2, z1 + k1_z1/2, a, b, c)
+
+        k3_y = step_size * f(z + step_size/2, y + k2_y/2, z1 + k2_z1/2, a, b, c)
+        k3_z1 = step_size * g(z + step_size/2, y + k2_y/2, z1 + k2_z1/2, a, b, c)
+
+        k4_y = step_size * f(z + step_size, y + k3_y, z1 + k3_z1, a, b, c)
+        k4_z1 = step_size * g(z + step_size, y + k3_y, z1 + k3_z1, a, b, c)
+
+        y += (k1_y + 2*k2_y + 2*k3_y + k4_y) / 6
+        z1 += (k1_z1 + 2*k2_z1 + 2*k3_z1 + k4_z1) / 6
+        z += step_size
+
+    return y
+
+step_size = 0.001
+#approx_result = runge_kutta_4th_order_2F1(-k/ki, -1-k/ki, 1-k/ki, a, step_size) # al posto di a va il valore
+def w(t):
+    F = runge_kutta_4th_order_2F1
+    B = R(t, l, ki, d)
+    return ((n*k*rho)/(6*rhom))*((l/k)*(1-math.exp(-k*t))+((2*l-2*d)/(k-ki))*(math.exp(-ki*t)-math.exp(-k*t))+
+           ((3*l-6*d+((3*d**2)/l))/(k-2*ki))*(math.exp(-2*ki*t)-math.exp(-k*t)))- \
+        ((j*((B/l)**(k/ki)))/(k*np.pi*rhom*l**2))*float(F(-k/ki, -1-k/ki, 1-k/ki, ((d-l)/B)*np.exp(-ki*t), step_size))+\
+           ((j*((d/l)**(k/ki)))/(k*np.pi*rhom*l**2))*float(F(-k/ki, -1-k/ki, 1-k/ki, (d-l)/d, step_size))
+
+
+# proviamo il plot
+
+
+
+def monte_carlo_simulation(f, a, b, num_samples):
+
+    x_values = [random.uniform(a,b) for _ in range(num_samples)]  # Genera punti casuali in [a, b]
+    y_values = [w(x) for x in x_values]  # Calcola i valori della funzione nei punti generati
+    return x_values, y_values
+
+# Intervallo di simulazione
+a = 0
+b = 6000
+
+# Numero di campioni per il metodo Monte Carlo
+num_samples = 15
+
+# Simulare i dati utilizzando il metodo Monte Carlo
+x_values, y_values = monte_carlo_simulation(f, a, b, num_samples)
+
+# Graficare i dati simulati
+plt.scatter(x_values, y_values, label='Dati simulati')
+plt.xlabel('t(s)')
+plt.ylabel('R(t) (cm)')
+plt.title('Raggio del pozzo in funzione del tempo')
+plt.legend()
+plt.show()
